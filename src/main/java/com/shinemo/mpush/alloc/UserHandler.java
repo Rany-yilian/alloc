@@ -2,6 +2,8 @@ package com.shinemo.mpush.alloc;
 
 import com.mpush.api.Constants;
 import com.mpush.tools.Jsons;
+import com.shinemo.mpush.utils.JdbcUtils;
+import com.shinemo.mpush.utils.JsonUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
@@ -10,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
 import java.util.Map;
+import java.util.Properties;
 
 final class UserHandler implements HttpHandler {
 
@@ -17,116 +20,78 @@ final class UserHandler implements HttpHandler {
     private ResultSet rs = null;
     private PreparedStatement ps = null;
 
-    public UserHandler(){
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            this.conn = DriverManager.getConnection("jdbc:mysql://94.191.72.51:3306/im","root","JfCRI3sZzHL_");
-        }catch (ClassNotFoundException e){
+    private String userid = null;
+    private String img = null;
+    private String nickname = null;
+    private Integer appid = null;
 
-        }catch (SQLException e){
-
-        }finally {
-            try{
-                if(rs!=null){
-                    rs.close();
-                }
-            }catch (Exception e){
-
-            }
-            try{
-                if(ps!=null){
-                    ps.close();
-                }
-            }catch (Exception e){
-
-            }
-            try{
-                if(conn!=null){
-                    conn.close();
-                }
-            }catch (Exception e){
-
-            }
-        }
-
-
-    }
+    static Properties properties = new Properties();
 
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
         String body = new String(readBody(httpExchange), Constants.UTF_8);
-        Map<String,Object> params = Jsons.fromJson(body,Map.class);
+        Map<String, Object> params = Jsons.fromJson(body, Map.class);
         userRegist(params);
+        String response = "{\"code\":\"1\",\"msg\":\"成功\"}";
+        JsonUtils.renderJson(httpExchange, response);
     }
 
-    private void userRegist(Map<String,Object> params){
-        String userid = (String) params.get("userid");
-        String img = (String) params.get("img");
-        String nickname = (String) params.get("nickname");
-        insert(userid,img,nickname);
-    }
-
-    private void insert(String userid,String img,String nickname){
-        try {
-            String sql = "insert into  user values (?,?,?,?);";
-            this.ps = this.conn.prepareStatement(sql);
-            this.ps.setInt(1,111);
-            this.ps.setString(2,"111");
-            this.ps.setString(3,"22");
-            this.ps.setString(4,"yilian");
-            this.ps.executeUpdate();
-        }catch (SQLException e){
-            e.printStackTrace();
+    private void userRegist(Map<String, Object> params) {
+        userid = (String) params.get("userid");
+        img = (String) params.get("img");
+        nickname = (String) params.get("nickname");
+        appid = (Integer) params.get("appid");
+        boolean isExist = isExistedByAppid(appid);
+        if (!isExist) {
+            insert();
         }
-
-
     }
 
-    private void select(){
-        String sql = "select * from user";
-        Connection conn = null;
-        ResultSet rs = null;
-        PreparedStatement ps = null;
-        try{
-            Class.forName("com.mysql.jdbc.Driver");
-            long start = System.currentTimeMillis();
-            //建立连接
-            conn = DriverManager.getConnection("jdbc:mysql://94.191.72.51:3306/im","root","JfCRI3sZzHL_");
-            long end = System.currentTimeMillis();
-            System.out.println("建立连接耗时:"+(end-start)+"ms 毫秒");
+    private void insert() {
+        String sql = "insert into  user (`userid`,`img`,`nickname`,`app_id`)values (?,?,?,?);";
+        Connection conn = JdbcUtils.getConn();
+        try {
+            ps = conn.prepareStatement(sql);
+            ps.setString(1, userid);
+            ps.setString(2, img);
+            ps.setString(3, nickname);
+            ps.setInt(4, appid);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                ps.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private boolean isExistedByAppid(Integer appid) {
+        String sql = "SELECT * FROM user WHERE app_id=" + appid;
+        Connection conn = JdbcUtils.getConn();
+        try {
             ps = conn.prepareStatement(sql);
             rs = ps.executeQuery();
-            System.out.println("id\tuserid\timg\tnickname\tapp_id");
             while (rs.next()){
-                System.out.println(rs.getInt(1)+"\t"+rs.getString(2)+"\t"+rs.getString(3)+"\t"+rs.getString(4));
+                return true;
             }
-        }catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
-        }catch (ClassNotFoundException e){
-
         } finally {
-            try{
-                if(rs!=null){
-                    rs.close();
-                }
-            }catch (Exception e){
-
+            try {
+                rs.close();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            try{
-                if(ps!=null){
-                    ps.close();
-                }
-            }catch (Exception e){
-
-            }
-            try{
-                if(conn!=null){
-                    conn.close();
-                }
-            }catch (Exception e){
-
+            try {
+                ps.close();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
+        return false;
     }
 
     private byte[] readBody(HttpExchange httpExchange) throws IOException {
