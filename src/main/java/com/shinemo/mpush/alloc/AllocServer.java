@@ -40,6 +40,7 @@ public final class AllocServer extends BaseService {
     private HttpServer httpServer;
     private AllocHandler allocHandler;
     private PushHandler pushHandler;
+    private UserHandler userHandler;
 
     @Override
     public void init() {
@@ -49,11 +50,13 @@ public final class AllocServer extends BaseService {
         this.httpServer = HttpServerCreator.createServer(port, https);
         this.allocHandler = new AllocHandler();
         this.pushHandler = new PushHandler();
+        this.userHandler = new UserHandler();
 
         httpServer.setExecutor(Executors.newCachedThreadPool());//设置线程池，由于是纯内存操作，不需要队列
         httpServer.createContext("/", allocHandler);//查询mpush机器
         httpServer.createContext("/push", pushHandler);//模拟发送push
         httpServer.createContext("/index.html", new IndexPageHandler());//查询mpush机器
+        httpServer.createContext("/user/getToken.json",userHandler);//注册用户
     }
 
     @Override
