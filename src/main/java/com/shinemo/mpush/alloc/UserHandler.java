@@ -30,7 +30,8 @@ final class UserHandler implements HttpHandler {
         Map<String, Object> params = Jsons.fromJson(body, Map.class);
         Integer id = userRegist(params);
         try {
-            String encrypted = EncryptUtils.aesEncrypt("45454");
+            String encrypted = EncryptUtils.aesEncrypt(id+"");
+            System.out.println(EncryptUtils.aesDecrypt(encrypted));
             String response = "{\"code\":\"1\",\"msg\":\"成功\",\"data\":{\"token\":\""+encrypted+"\",\"id\":\""+id+"\"}}";
             JsonUtils.renderJson(httpExchange, response);
         }catch (Exception e){
