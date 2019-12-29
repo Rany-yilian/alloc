@@ -1,6 +1,6 @@
 package com.shinemo.mpush.bean;
 
-public class User {
+public class Auth {
 
     private int id;
 

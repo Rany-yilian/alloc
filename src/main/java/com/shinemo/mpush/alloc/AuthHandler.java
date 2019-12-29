@@ -2,10 +2,9 @@ package com.shinemo.mpush.alloc;
 
 import com.mpush.api.Constants;
 import com.mpush.tools.Jsons;
-import com.shinemo.mpush.bean.User;
-import com.shinemo.mpush.dao.UserDao;
+import com.shinemo.mpush.bean.Auth;
+import com.shinemo.mpush.dao.AuthDao;
 import com.shinemo.mpush.utils.EncryptUtils;
-import com.shinemo.mpush.utils.JdbcUtils;
 import com.shinemo.mpush.utils.JsonUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -13,11 +12,9 @@ import com.sun.net.httpserver.HttpHandler;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.*;
 import java.util.Map;
-import java.util.Properties;
 
-final class UserHandler implements HttpHandler {
+final class AuthHandler implements HttpHandler {
 
     private String userid = null;
     private String img = null;
@@ -44,8 +41,8 @@ final class UserHandler implements HttpHandler {
         int id;
         String userid = (String) params.get("userid");
         int appid = (int) params.get("appid");
-        UserDao userDao = new UserDao();
-        User resUser = userDao.queryByRegist(userid,appid);
+        AuthDao userDao = new AuthDao();
+        Auth resUser = userDao.queryByRegist(userid,appid);
         if(resUser==null){
             id = insert(params);
             return id;
@@ -58,12 +55,12 @@ final class UserHandler implements HttpHandler {
         img = (String) params.get("img");
         nickname = (String) params.get("nickname");
         appid = (Integer) params.get("appid");
-        User user = new User();
+        Auth user = new Auth();
         user.setUserid(userid);
         user.setNickname(nickname);
         user.setImg(img);
         user.setApp_id(appid);
-        UserDao userDao = new UserDao();
+        AuthDao userDao = new AuthDao();
         int id = userDao.insert(user);
         return id;
     }
