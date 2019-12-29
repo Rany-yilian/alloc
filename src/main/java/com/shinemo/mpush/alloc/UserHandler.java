@@ -19,16 +19,10 @@ import java.util.Properties;
 
 final class UserHandler implements HttpHandler {
 
-    private Connection conn = null;
-    private ResultSet rs = null;
-    private PreparedStatement ps = null;
-
     private String userid = null;
     private String img = null;
     private String nickname = null;
     private Integer appid = null;
-
-    static Properties properties = new Properties();
 
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
@@ -71,34 +65,6 @@ final class UserHandler implements HttpHandler {
         UserDao userDao = new UserDao();
         int id = userDao.insert(user);
         return id;
-    }
-
-    private Integer isExistedByAppid(Integer appid) {
-        Integer id;
-        String sql = "SELECT * FROM user WHERE app_id=" + appid;
-        Connection conn = JdbcUtils.getConn();
-        try {
-            ps = conn.prepareStatement(sql);
-            rs = ps.executeQuery();
-            while (rs.next()){
-                id = rs.getInt("id");
-                return id;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                rs.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            try {
-                ps.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
     }
 
     private byte[] readBody(HttpExchange httpExchange) throws IOException {
