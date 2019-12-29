@@ -2,6 +2,8 @@ package com.shinemo.mpush.alloc;
 
 import com.mpush.api.Constants;
 import com.mpush.tools.Jsons;
+import com.shinemo.mpush.bean.User;
+import com.shinemo.mpush.dao.UserDao;
 import com.shinemo.mpush.utils.EncryptUtils;
 import com.shinemo.mpush.utils.JdbcUtils;
 import com.shinemo.mpush.utils.JsonUtils;
@@ -44,37 +46,31 @@ final class UserHandler implements HttpHandler {
     }
 
     private Integer userRegist(Map<String, Object> params) {
-        Integer id;
+        int id;
+        String userid = (String) params.get("userid");
+        int appid = (int) params.get("appid");
+        UserDao userDao = new UserDao();
+        User resUser = userDao.queryByRegist(userid,appid);
+        if(resUser==null){
+            id = insert(params);
+            return id;
+        }
+        return resUser.getId();
+    }
+
+    private Integer insert(Map<String,Object> params) {
         userid = (String) params.get("userid");
         img = (String) params.get("img");
         nickname = (String) params.get("nickname");
         appid = (Integer) params.get("appid");
-        id = isExistedByAppid(appid);
-        if (id==null) {
-            id = insert();
-        }
+        User user = new User();
+        user.setUserid(userid);
+        user.setNickname(nickname);
+        user.setImg(img);
+        user.setApp_id(appid);
+        UserDao userDao = new UserDao();
+        int id = userDao.insert(user);
         return id;
-    }
-
-    private Integer insert() {
-        Integer id=null;
-        String sql = "insert into  user (`userid`,`img`,`nickname`,`app_id`)values (?,?,?,?);";
-        Connection conn = JdbcUtils.getConn();
-        try {
-            ps = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, userid);
-            ps.setString(2, img);
-            ps.setString(3, nickname);
-            ps.setInt(4, appid);
-            ps.executeUpdate();
-            rs = ps.getGeneratedKeys();
-            rs.next();
-            id = rs.getInt(1);
-            return id;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return id=1;
     }
 
     private Integer isExistedByAppid(Integer appid) {
