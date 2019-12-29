@@ -2,6 +2,7 @@ package com.shinemo.mpush.alloc;
 
 import com.mpush.api.Constants;
 import com.mpush.tools.Jsons;
+import com.shinemo.mpush.utils.EncryptUtils;
 import com.shinemo.mpush.utils.JdbcUtils;
 import com.shinemo.mpush.utils.JsonUtils;
 import com.sun.net.httpserver.HttpExchange;
@@ -31,51 +32,61 @@ final class UserHandler implements HttpHandler {
     public void handle(HttpExchange httpExchange) throws IOException {
         String body = new String(readBody(httpExchange), Constants.UTF_8);
         Map<String, Object> params = Jsons.fromJson(body, Map.class);
-        userRegist(params);
-        String response = "{\"code\":\"1\",\"msg\":\"成功\"}";
-        JsonUtils.renderJson(httpExchange, response);
+        Integer id = userRegist(params);
+        try {
+            String encrypted = EncryptUtils.aesEncrypt("45454");
+            String response = "{\"code\":\"1\",\"msg\":\"成功\",\"data\":{\"token\":\""+encrypted+"\",\"id\":\""+id+"\"}}";
+            JsonUtils.renderJson(httpExchange, response);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
     }
 
-    private void userRegist(Map<String, Object> params) {
+    private Integer userRegist(Map<String, Object> params) {
+        Integer id;
         userid = (String) params.get("userid");
         img = (String) params.get("img");
         nickname = (String) params.get("nickname");
         appid = (Integer) params.get("appid");
-        boolean isExist = isExistedByAppid(appid);
-        if (!isExist) {
-            insert();
+        id = isExistedByAppid(appid);
+        if (id==null) {
+            id = insert();
         }
+        return id;
     }
 
-    private void insert() {
+    private Integer insert() {
+        Integer id=null;
         String sql = "insert into  user (`userid`,`img`,`nickname`,`app_id`)values (?,?,?,?);";
         Connection conn = JdbcUtils.getConn();
         try {
-            ps = conn.prepareStatement(sql);
+            ps = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, userid);
             ps.setString(2, img);
             ps.setString(3, nickname);
             ps.setInt(4, appid);
             ps.executeUpdate();
+            rs = ps.getGeneratedKeys();
+            rs.next();
+            id = rs.getInt(1);
+            return id;
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                ps.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
         }
+        return id=1;
     }
 
-    private boolean isExistedByAppid(Integer appid) {
+    private Integer isExistedByAppid(Integer appid) {
+        Integer id;
         String sql = "SELECT * FROM user WHERE app_id=" + appid;
         Connection conn = JdbcUtils.getConn();
         try {
             ps = conn.prepareStatement(sql);
             rs = ps.executeQuery();
             while (rs.next()){
-                return true;
+                id = rs.getInt("id");
+                return id;
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -91,7 +102,7 @@ final class UserHandler implements HttpHandler {
                 e.printStackTrace();
             }
         }
-        return false;
+        return null;
     }
 
     private byte[] readBody(HttpExchange httpExchange) throws IOException {
