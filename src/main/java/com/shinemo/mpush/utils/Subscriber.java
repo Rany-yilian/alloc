@@ -3,6 +3,7 @@ package com.shinemo.mpush.utils;
 import redis.clients.jedis.JedisPubSub;
 
 public class Subscriber extends JedisPubSub {
+
     public Subscriber(){}
     @Override
     public void onMessage(String channel, String message) {       //收到消息会调用

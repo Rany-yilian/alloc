@@ -1,10 +1,9 @@
 package com.shinemo.mpush.utils;
 
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
-public class PubSubTest {
+public class SubTest {
 
     public static void main( String[] args )
     {
@@ -14,7 +13,5 @@ public class PubSubTest {
         System.out.println(String.format("redis pool is starting, redis ip %s, redis port %d", "94.191.72.51", 6379));
         SubThread subThread = new SubThread(jedisPool);  //订阅者
         subThread.start();
-        Publisher publisher = new Publisher(jedisPool);    //发布者
-        publisher.start();
     }
 }

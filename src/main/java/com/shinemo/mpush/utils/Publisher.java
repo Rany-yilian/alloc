@@ -22,6 +22,7 @@ public class Publisher extends Thread{
             try {
                 line = reader.readLine();
                 if (!"quit".equals(line)) {
+                    System.out.println("publish message:"+line);
                     jedis.publish("mychannel", line);   //从 mychannel 的频道上推送消息
                 } else {
                     break;
